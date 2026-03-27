@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallons for Good</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main game shell keeps header + play area together -->
+    <main class="game-shell">
+        <!-- Top header with branding, live stats, and controls -->
+        <header class="top-bar">
+            <img src="img/cw_logo-horizontal.png" alt="charity: water" class="cw-logo">
+            <h1 class="game-title">Gallons For Good</h1>
+            <p class="game-subtitle">Catch clean drops, avoid polluted drops!</p>
+
+            <!-- HUD values are updated by script.js during gameplay -->
+            <div class="hud" aria-label="Game status">
+                <div class="hud-item">Timer: <span id="time">30</span>s</div>
+                <div class="hud-item">Gallons Collected: <span id="score">0</span></div>
+                <div class="hud-item">Stage: <span id="stage-name">Fresh Flow</span></div>
+            </div>
+
+            <!-- Start begins a run, Reset returns game to initial state -->
+            <div class="controls">
+                <button id="start-btn" type="button">Start</button>
+                <button id="reset-btn" type="button">Reset</button>
+            </div>
+        </header>
+
+        <!-- Active game field where drops spawn and fall -->
+        <section id="game-container" aria-label="Falling drop game area">
+            <!-- Stage banner briefly appears when stage changes -->
+            <div id="stage-banner" class="stage-banner">
+                <p id="stage-text">Stage 1: Fresh Flow</p>
+                <p id="stage-tip">Drops are moving at a calm pace.</p>
+            </div>
+
+            <!-- End overlay shown when timer reaches 0 -->
+            <div id="end-screen" class="end-screen hidden" role="status" aria-live="polite">
+                <h2 id="end-title">Great effort!</h2>
+                <p id="end-message">Press Start to play again.</p>
+            </div>
+
+            <!-- Visual goal meter that fills as score approaches 20 -->
+            <div class="goal-panel" aria-label="Goal progress">
+                <div class="can-meter" title="Water can progress to 20 gallons">
+                    <div id="can-fill" class="can-fill"></div>
+                    <img src="img/water-can-transparent.png" alt="Water can progress icon" class="can-image">
+                </div>
+                <p class="goal-text"><span id="goal-progress">0%</span> of 20-gallon goal</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Lightweight confetti library used for win celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <!-- Game logic -->
+    <script src="script.js"></script>
+</body>
+</html>

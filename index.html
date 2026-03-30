@@ -27,6 +27,15 @@
                 <button id="start-btn" type="button">Start</button>
                 <button id="reset-btn" type="button">Reset</button>
             </div>
+
+            <div class="difficulty-controls" aria-label="Difficulty selection">
+                <label for="difficulty-select">Difficulty</label>
+                <select id="difficulty-select" name="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
         </header>
 
         <!-- Active game field where drops spawn and fall -->
@@ -36,6 +45,8 @@
                 <p id="stage-text">Stage 1: Fresh Flow</p>
                 <p id="stage-tip">Drops are moving at a calm pace.</p>
             </div>
+
+            <div id="milestone-banner" class="milestone-banner hidden" role="status" aria-live="polite"></div>
 
             <!-- End overlay shown when timer reaches 0 -->
             <div id="end-screen" class="end-screen hidden" role="status" aria-live="polite">
@@ -52,6 +63,15 @@
                 <p class="goal-text"><span id="goal-progress">0%</span> of 20-gallon goal</p>
             </div>
         </section>
+
+        <footer class="cw-footer" aria-label="charity water links">
+            <p>Learn more about charity: water and help make a difference:</p>
+            <nav class="cw-footer-links" aria-label="charity water resources">
+                <a href="https://www.charitywater.org/" target="_blank" rel="noopener noreferrer">Visit charity: water</a>
+                <a href="https://www.charitywater.org/donate" target="_blank" rel="noopener noreferrer">Donate Now</a>
+                <a href="https://www.charitywater.org/about" target="_blank" rel="noopener noreferrer">About Us</a>
+            </nav>
+        </footer>
     </main>
 
     <!-- Lightweight confetti library used for win celebration -->

@@ -42,6 +42,40 @@ const LOSE_MESSAGES = [
   "Almost there. One more run can push you over the goal.",
 ];
 
+const DIFFICULTY_MODES = {
+  // Easy: more frequent drops + slower fall = more chances to catch.
+  easy: {
+    label: "Easy",
+    spawnMultiplier: 0.72,
+    fallMultiplier: 1.42,
+  },
+  // Normal: baseline pacing used by the original game.
+  normal: {
+    label: "Normal",
+    spawnMultiplier: 1,
+    fallMultiplier: 1,
+  },
+  // Hard: same spawn count as Normal, but drops fall faster.
+  hard: {
+    label: "Hard",
+    spawnMultiplier: 1,
+    fallMultiplier: 0.78,
+  },
+};
+
+// Message list for score milestones shown during a run.
+const MILESTONE_MESSAGES = [
+  "Halfway there!",
+  "Only 5 gallons to go!",
+  "Goal reached! Great work!",
+];
+
+const AUDIO = {
+  goodDrop: new Audio("sound/gooddropsound.mp3"),
+  badDrop: new Audio("sound/baddropsound.mp3"),
+  win: new Audio("sound/confettisound.mp3"),
+};
+
 // Cache all DOM elements once so functions can reuse them quickly.
 const gameContainer = document.getElementById("game-container");
 const scoreEl = document.getElementById("score");
@@ -57,6 +91,8 @@ const endMessageEl = document.getElementById("end-message");
 const startBtn = document.getElementById("start-btn");
 const resetBtn = document.getElementById("reset-btn");
 const stageBannerEl = document.getElementById("stage-banner");
+const difficultySelectEl = document.getElementById("difficulty-select");
+const milestoneBannerEl = document.getElementById("milestone-banner");
 
 // Mutable runtime state for one game session.
 let gameRunning = false;
@@ -65,7 +101,10 @@ let timeLeft = GAME_DURATION;
 let timerId = null;
 let spawnTimeoutId = null;
 let stageBannerTimeoutId = null;
+let milestoneTimeoutId = null;
 let currentStageName = STAGES[0].name;
+let selectedDifficulty = "normal";
+let milestonesShown = new Set();
 
 // Wire up user controls.
 startBtn.addEventListener("click", startGame);
@@ -75,6 +114,11 @@ resetBtn.addEventListener("click", resetGame);
 renderUI();
 setStageUI(getCurrentStage());
 hideStageBanner();
+setDifficultyControlState(false);
+
+difficultySelectEl.addEventListener("change", (event) => {
+  selectedDifficulty = event.target.value;
+});
 
 // Starts a new run by enabling gameplay loop, timer countdown, and drop spawning.
 function startGame() {
@@ -86,6 +130,8 @@ function startGame() {
   gameRunning = true;
   hideEndScreen();
   startBtn.disabled = true;
+  setDifficultyControlState(true);
+  hideMilestoneBanner();
 
   // Show current stage banner briefly when run starts.
   showStageBanner(getCurrentStage());
@@ -105,12 +151,16 @@ function resetGame() {
   score = 0;
   timeLeft = GAME_DURATION;
   gameRunning = false;
+  selectedDifficulty = difficultySelectEl.value;
+  milestonesShown = new Set();
 
   // Reset controls and overlays.
   startBtn.disabled = false;
+  setDifficultyControlState(false);
 
   hideEndScreen();
   hideStageBanner();
+  hideMilestoneBanner();
   renderUI();
   setStageUI(getCurrentStage());
   currentStageName = STAGES[0].name;
@@ -159,10 +209,14 @@ function scheduleNextDrop() {
   const stage = getCurrentStage();
   createDrop(stage);
 
+  const difficultyMode = getDifficultyMode();
   // Small jitter prevents perfectly predictable rhythm.
   const randomJitter = Math.random() * 160;
-  // Schedule next drop based on current stage's spawn delay + jitter.
-  spawnTimeoutId = setTimeout(scheduleNextDrop, stage.spawnDelay + randomJitter);
+  // Lower spawnMultiplier means shorter delays, so drops appear more often.
+  spawnTimeoutId = setTimeout(
+    scheduleNextDrop,
+    stage.spawnDelay * difficultyMode.spawnMultiplier + randomJitter
+  );
 }
 
 // Creates one falling drop element, wires click behavior, and handles cleanup.
@@ -185,7 +239,9 @@ function createDrop(stage) {
   drop.style.height = `${size}px`;
   // Ensure drop stays within container horizontally.
   drop.style.left = `${Math.random() * Math.max(1, containerWidth - size)}px`;
-  drop.style.animationDuration = `${stage.fallDuration}s`;
+  const difficultyMode = getDifficultyMode();
+  // Higher fallMultiplier means slower falling drops (longer animation).
+  drop.style.animationDuration = `${stage.fallDuration * difficultyMode.fallMultiplier}s`;
   drop.style.setProperty("--fall-distance", `${containerHeight + size + 36}px`);
 
   // Prevent double counting if user taps repeatedly before removal.
@@ -197,6 +253,7 @@ function createDrop(stage) {
 
     // Clean gives +1, polluted gives -1.
     const points = isCleanDrop ? 1 : -1;
+    playSound(isCleanDrop ? AUDIO.goodDrop : AUDIO.badDrop);
     applyScore(points);
 
     // Add quick feedback at click location.
@@ -231,6 +288,7 @@ function applyScore(amount) {
   if (score < 0) score = 0;
 
   renderUI();
+  checkMilestones();
 }
 
 // Re-renders dynamic HUD values like score, timer, stage label, and can fill.
@@ -264,6 +322,7 @@ function endGame() {
 
   // Reset button is now the only replay action.
   startBtn.disabled = true;
+  setDifficultyControlState(true);
   hideStageBanner();
 
   // Choose message pool based on score goal.
@@ -277,6 +336,8 @@ function endGame() {
 
   // Celebrate wins with confetti.
   if (playerWon) {
+    // Win sound only plays for the same win path that triggers confetti.
+    playSound(AUDIO.win);
     burstConfetti();
   }
 }
@@ -293,9 +354,11 @@ function stopGameLoop() {
   clearInterval(timerId);
   clearTimeout(spawnTimeoutId);
   clearTimeout(stageBannerTimeoutId);
+  clearTimeout(milestoneTimeoutId);
   timerId = null;
   spawnTimeoutId = null;
   stageBannerTimeoutId = null;
+  milestoneTimeoutId = null;
 }
 
 // Removes transient gameplay nodes (drops and visual effects) from the playfield.
@@ -395,6 +458,13 @@ function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+// Plays a short SFX safely without interrupting gameplay if playback is blocked.
+function playSound(audio) {
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
 // Shows the stage banner, updates its text, then auto-hides it after 5 seconds.
 function showStageBanner(stage) {
   // Show the stage banner for 5 seconds.
@@ -408,4 +478,49 @@ function showStageBanner(stage) {
 function hideStageBanner() {
   // Hide stage banner until next stage/start event.
   stageBannerEl.classList.add("banner-hidden");
+}
+
+// Returns currently selected difficulty tuning values.
+function getDifficultyMode() {
+  return DIFFICULTY_MODES[selectedDifficulty] || DIFFICULTY_MODES.normal;
+}
+
+// Locks/unlocks the difficulty selector based on game state.
+function setDifficultyControlState(disabled) {
+  difficultySelectEl.disabled = disabled;
+}
+
+// Triggers milestone messages once per run when score thresholds are reached.
+function checkMilestones() {
+  // Each threshold is checked with conditionals and gated so it fires once per run.
+  if (score >= 10 && !milestonesShown.has(10)) {
+    milestonesShown.add(10);
+    showMilestoneBanner(MILESTONE_MESSAGES[0]);
+  }
+
+  if (score >= 15 && !milestonesShown.has(15)) {
+    milestonesShown.add(15);
+    showMilestoneBanner(MILESTONE_MESSAGES[1]);
+  }
+
+  if (score >= 20 && !milestonesShown.has(20)) {
+    milestonesShown.add(20);
+    showMilestoneBanner(MILESTONE_MESSAGES[2]);
+  }
+}
+
+// Shows a milestone callout briefly, then hides it.
+function showMilestoneBanner(message) {
+  // Replace any currently visible message and restart the auto-hide timer.
+  milestoneBannerEl.textContent = message;
+  milestoneBannerEl.classList.remove("hidden");
+  clearTimeout(milestoneTimeoutId);
+  milestoneTimeoutId = setTimeout(hideMilestoneBanner, 1800);
+}
+
+// Hides milestone callout and clears pending hide timeout.
+function hideMilestoneBanner() {
+  milestoneBannerEl.classList.add("hidden");
+  clearTimeout(milestoneTimeoutId);
+  milestoneTimeoutId = null;
 }

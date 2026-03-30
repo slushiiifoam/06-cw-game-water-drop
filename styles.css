@@ -45,7 +45,7 @@ body {
     display: flex;
     justify-content: center;
     background: linear-gradient(180deg, #0f1014 0%, #202632 100%);
-    font-family: "Avenir Next", Avenir, "Proxima Nova", "Trebuchet MS", sans-serif;
+    font-family: "Proxima Nova", Avenir, "Avenir Next", "Trebuchet MS", sans-serif;
     color: var(--text-main);
     padding: 14px;
 }
@@ -112,6 +112,37 @@ body {
     display: flex;
     justify-content: center;
     gap: 10px;
+}
+
+.difficulty-controls {
+    /* Difficulty select row shown before each run */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.difficulty-controls label {
+    color: #2f3c4b;
+}
+
+.difficulty-controls select {
+    border: 2px solid #b8d2e6;
+    border-radius: 999px;
+    padding: 6px 14px;
+    background: #fff;
+    color: #17324f;
+    font: inherit;
+    font-weight: 700;
+}
+
+.difficulty-controls select:disabled {
+    opacity: 0.45;
+    background: #e5e7eb;
+    color: #6b7280;
+    border-color: #c3c7cf;
+    cursor: not-allowed;
 }
 
 button {
@@ -190,6 +221,21 @@ button:disabled {
     opacity: 0;
     transform: translateX(-50%) translateY(-10px);
     pointer-events: none;
+}
+
+.milestone-banner {
+    /* Brief positive milestone callout */
+    position: absolute;
+    z-index: 6;
+    right: 14px;
+    top: 18px;
+    background: #ffffff;
+    color: #0d3b66;
+    border-left: 6px solid var(--cw-blue);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(19, 19, 19, 0.2);
 }
 
 #stage-text {
@@ -338,6 +384,52 @@ button:disabled {
     display: none;
 }
 
+.cw-footer {
+    /* Branded charity links section */
+    margin: 12px;
+    margin-top: 14px;
+    border-radius: 14px;
+    background: #edf3f5;
+    border: 1px solid rgba(46, 157, 247, 0.22);
+    border-top: 5px solid var(--cw-light-blue);
+    padding: 22px 16px;
+    text-align: center;
+}
+
+.cw-footer p {
+    font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+    color: #36414f;
+}
+
+.cw-footer-links {
+    margin-top: 14px;
+    width: min(860px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-items: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.cw-footer-links a {
+    color: var(--cw-blue);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    padding: 6px 10px;
+    text-align: center;
+    border-radius: 10px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cw-footer-links a:hover,
+.cw-footer-links a:focus-visible {
+    background: rgba(255, 201, 7, 0.2);
+    color: #1f77b6;
+}
+
 @keyframes dropFall {
     /* Vertical movement for drops */
     from {
@@ -395,5 +487,22 @@ button:disabled {
 
     .goal-panel {
         bottom: 10px;
+    }
+
+    .milestone-banner {
+        top: 70px;
+        right: 10px;
+        left: 10px;
+        text-align: center;
+    }
+
+    .cw-footer {
+        margin: 10px;
+        padding: 18px 12px;
+    }
+
+    .cw-footer-links {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 }

@@ -45,7 +45,7 @@ body {
     display: flex;
     justify-content: center;
     background: linear-gradient(180deg, #0f1014 0%, #202632 100%);
-    font-family: "Proxima Nova", Avenir, "Avenir Next", "Trebuchet MS", sans-serif;
+    font-family: "Avenir Next", Avenir, "Proxima Nova", "Trebuchet MS", sans-serif;
     color: var(--text-main);
     padding: 14px;
 }
